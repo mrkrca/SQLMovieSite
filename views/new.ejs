@@ -1,7 +1,8 @@
 <%- include("partials/header.ejs") %>
 <body style="background-color: #1e2129; ">
-<h2><%= edit ? "Edit Movie" : "Add Movie" %></h2>
+
 <form class="container" action="<%= edit ? '/edit-movie/' + movie.imdbid : '/new' %>" method="POST">
+    <h2 class="edit_new"><%= edit ? "Edit Movie" : "Add Movie" %></h2>
     <div class="form-group">
         <label for="exampleFormControlInput1">Name</label>
         <input type="text" class="form-control" id="exampleFormControlInput1" name="movieName" placeholder="Movie Name" value="<%= edit && movie ? movie.moviename : '' %>">

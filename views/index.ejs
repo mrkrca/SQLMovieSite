@@ -13,46 +13,40 @@
               <div class="movies-wrapper">
                   <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3">
                     <% paginatedMovies.forEach((movie) => { %>
-                        <div class="col">
-                          <a href="/view/<%= movie.imdbid %>" class="text-decoration-none">
-                            <div class="card movie-card">
-                              <div class="movie-img-container">
-                                <img 
-                                  src="/images/steamBackground.jpg" 
-                                  class="card-img-top" 
-                                  alt="<%= movie.Title %>"
-                                >
-                                <div class="movie-overlay">
-                                  <h5 class="movie-title"><%= movie.moviename %></h5>
-                                </div>
-                                <span class="hd-badge">HD</span>
-                                <% if (locals.user) { %>
-                                  <form action="/save-favorite" method="POST" class="favorite-form">
-                                    <div class="position-absolute top-0 start-0 m-2">
-                                      <input type="hidden" name="movie_id" value="<%= movie.imdbid %>">
-                                      <input type="hidden" name="current_page" value="<%= currentPage %>"> 
-                                      <button type="submit" class="btn btn-outline-danger <%= movie.isFavorite ? 'active' : '' %>">
-                                        <i class="bi bi-heart <%= movie.isFavorite ? 'fill' : '' %>"></i>
-                                      </button>
-                                    </div>
-                                  </form>
-                                <% } %>
+                      <div class="col">
+                        <a href="/view/<%= movie.imdbid %>" class="text-decoration-none">
+                          <div class="card movie-card">
+                            <div class="movie-img-container">
+                              <img
+                                src="/images/steamBackground.jpg"
+                                class="card-img-top"
+                                alt="<%= movie.Title %>"
+                              >
+                              <div class="movie-overlay">
+                                <h5 class="movie-title"><%= movie.moviename %></h5>
                               </div>
+                              <span class="hd-badge">HD</span>
+                              <% if (locals.user) { %>
+                                <form action="/save-favorite" method="POST" class="favorite-form">
+                                  <div class="heart-checkbox">
+                                    <input 
+                                      type="checkbox" 
+                                      id="heart-<%= movie.imdbid %>" 
+                                      name="is_favorite"
+                                      <%= movie.isFavorite ? 'checked' : '' %>
+                                      onchange="this.form.submit()"
+                                    >
+                                    <label for="heart-<%= movie.imdbid %>" class="heart-label"></label>
+                                    <input type="hidden" name="movie_id" value="<%= movie.imdbid %>">
+                                    <input type="hidden" name="current_page" value="<%= currentPage %>">
+                                  </div>
+                                </form>
+                              <% } %>
                             </div>
-                          </a>
-                          
-                          <% if (locals.isAdmin) { %>
-                            <div class="d-flex justify-content-around">
-                              <div class="mt-2">
-                                <a href="/edit-movie/<%= movie.imdbid %>" class="btn btn-primary btn-sm">Edit</a>
-                              </div> 
-                              <div class="mt-2">
-                                <a href="/delete/<%= movie.imdbid %>" class="btn btn-primary btn-sm">Delete</a>
-                              </div>
-                            </div>
-                          <% } %>
-                        </div>
-                      <% }) %>
+                          </div>
+                        </a>
+                      </div>
+                    <% }) %>
                       
                       
                   </div>
@@ -122,6 +116,21 @@
           <% } %>
       </div>
   </div>
+
+  <script>
+    function handleFavorite(event, form) {
+      event.preventDefault();
+      
+      fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+    }
+    </script>
+
 
 </body>
 <%- include("partials/footer.ejs") %>

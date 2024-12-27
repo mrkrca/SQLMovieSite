@@ -140,3 +140,92 @@ button .bi-heart.fill {
 button .bi-heart {
   color: grey;
 }
+.movie-card {
+  position: relative;
+}
+
+.heart-checkbox {
+  position: absolute;
+  top: 0px;
+  left: 10px;
+  z-index: 10;
+}
+
+.heart-checkbox input[type="checkbox"] {
+  display: none;
+}
+
+.heart-label {
+  cursor: pointer;
+  color: white;
+  font-size: 50px;
+  transition: all 0.2s ease;
+  filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+}
+
+.heart-label:before {
+  content: '♡';
+}
+
+.heart-checkbox input[type="checkbox"]:checked + .heart-label:before {
+  content: '♥';
+  color: #ff3366;
+}
+
+.heart-label:hover {
+  transform: scale(1.1);
+}
+
+.heart-checkbox input[type="checkbox"]:checked + .heart-label {
+  animation: heart-burst 0.2s ease-out;
+}
+
+@keyframes heart-burst {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.movie-img-container {
+  position: relative;
+}
+
+.hd-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #ffd700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.edit_new {
+ 
+  color: rgb(241, 241, 241);
+}
+
+.navbar {
+  font-size: 0.9rem; 
+}
+
+.navbar .nav-link {
+  padding: 0.3rem 0.5rem; 
+}
+
+.navbar .dropdown-menu {
+  font-size: 0.85rem; 
+}
+
+.navbar .small-text {
+  font-size: 0.85rem; 
+}
+
+.navbar-toggler {
+  padding: 0.2rem 0.4rem; 
+}
+
+.navbar-collapse {
+  margin-top: 0.2rem; 
+}

@@ -53,26 +53,41 @@ let movies = [
 ]
 
 
+async function setFavoriteStatusForMovies(movies, userId) {
+  if (!userId) return movies;
 
+  const favoritesResult = await db.query(
+    "SELECT movie_id FROM favorites WHERE user_id = $1",
+    [userId]
+  );
+  const favoriteMovieIds = favoritesResult.rows.map(row => row.movie_id);
+
+  return movies.map(movie => ({
+    ...movie,
+    isFavorite: favoriteMovieIds.includes(movie.imdbid)
+  }));
+}
 
 const edit = false;
 
 
-app.get("/",  async(req, res) => {
-    const query = req.query;
+app.get("/", async (req, res) => {
+  const query = req.query;
+  const userId = req.session.user ? req.session.user.id : null;
 
-    try {
-        const result = await db.query("SELECT * FROM movies");
-        console.log(result.rows); 
-        movies = result.rows;
-        res.render("index.ejs", { movies: movies, query: query, currentDate});
-    } catch (error) {
-        console.error("Error fetching movies:", error); 
-        res.status(500).send("Error fetching movies.");
-    }
+  try {
+    const result = await db.query("SELECT * FROM movies");
+    let movies = result.rows;
 
-   
+    movies = await setFavoriteStatusForMovies(movies, userId);
+
+    res.render("index.ejs", { movies: movies, query: query, currentDate });
+  } catch (error) {
+    console.error("Error fetching movies:", error);
+    res.status(500).send("Error fetching movies.");
+  }
 });
+
 
 app.get("/new", (req, res)=>  {
     res.render("new.ejs", { edit: false, currentDate: new Date() });
@@ -111,47 +126,42 @@ app.post("/new", async (req, res)=>  {
   }  
 })
 
+app.post("/filter/genre/:genre", async (req, res) => {
+  const genre = req.body.genre;
+  const userId = req.session.user ? req.session.user.id : null;
 
-app.post("/filter/genre/:genre", async(req, res) => {
-    let genre = req.body.genre;
-    
-    try {
-        const result = await db.query("SELECT * FROM movies WHERE genre = $1", [genre]) 
-        const filteredMovies = result.rows;
-        res.render("index.ejs", { movies: filteredMovies, query: req.query, currentDate });
-    } catch (error) {
-        console.error("Error fetching movies:", error); 
-        res.status(500).send("Error fetching movies.");
-    }
-   
-  
+  try {
+    const result = await db.query("SELECT * FROM movies WHERE genre = $1", [genre]);
+    let filteredMovies = result.rows;
+
+    filteredMovies = await setFavoriteStatusForMovies(filteredMovies, userId);
+
+    res.render("index.ejs", { movies: filteredMovies, query: req.query, currentDate });
+  } catch (error) {
+    console.error("Error fetching movies:", error);
+    res.status(500).send("Error fetching movies.");
+  }
 });
 
-
 app.post("/search", async (req, res) => {
-    const searchQuery = req.body.searchQuery;
+  const searchQuery = req.body.searchQuery;
+  const userId = req.session.user ? req.session.user.id : null;
 
-   
-    if (!searchQuery || searchQuery.trim() === "") {
-        return res.status(400).send("Search query is required.");
-    }
+  if (!searchQuery || searchQuery.trim() === "") {
+    return res.status(400).send("Search query is required.");
+  }
 
-    try {
-        
-        const result = await db.query(
-            "SELECT * FROM movies WHERE LOWER(moviename) LIKE $1;",
-            [`%${searchQuery.toLowerCase()}%`]
-        );
+  try {
+    const result = await db.query("SELECT * FROM movies WHERE moviename ILIKE $1", [`%${searchQuery}%`]);
+    let searchedMovies = result.rows;
 
-      
-        const searchedMovies = result.rows;
+    searchedMovies = await setFavoriteStatusForMovies(searchedMovies, userId);
 
-       
-        res.render("index.ejs", { movies: searchedMovies, query: req.query, currentDate });
-    } catch (error) {
-        console.error("Error fetching movies:", error);
-        res.status(500).send("Error fetching movies.");
-    }
+    res.render("index.ejs", { movies: searchedMovies, query: req.query, currentDate });
+  } catch (error) {
+    console.error("Error fetching movies:", error);
+    res.status(500).send("Error fetching movies.");
+  }
 });
 
 app.get("/edit-movie/:imdbid", async (req, res) => {
@@ -280,27 +290,29 @@ app.post("/signin", async (req, res)=> {
   }
 
 })
+
 app.post('/save-favorite', requireAuth, async (req, res) => {
   try {
     const movieId = req.body.movie_id;
     const userId = req.session.user.id;
     const currentPage = req.body.current_page || 1;
+    const isFavorite = req.body.is_favorite === 'on';
 
-    const existingFavorite = await db.query(
-      'SELECT * FROM favorites WHERE user_id = $1 AND movie_id = $2',
-      [userId, movieId]
-    );
-
-    if (existingFavorite.rows.length > 0) {
-      // Remove favorite
-      await db.query(
-        
+    if (isFavorite) {
+      const existingFavorite = await db.query(
+        'SELECT * FROM favorites WHERE user_id = $1 AND movie_id = $2',
         [userId, movieId]
       );
+
+      if (existingFavorite.rows.length === 0) {
+        await db.query(
+          'INSERT INTO favorites (user_id, movie_id) VALUES ($1, $2)',
+          [userId, movieId]
+        );
+      }
     } else {
-      
       await db.query(
-        'INSERT INTO favorites (user_id, movie_id) VALUES ($1, $2)',
+        'DELETE FROM favorites WHERE user_id = $1 AND movie_id = $2',
         [userId, movieId]
       );
     }
@@ -310,7 +322,6 @@ app.post('/save-favorite', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'Failed to update favorite' });
   }
 });
-
 
 
 app.listen(port, ()=> {
