@@ -93,30 +93,45 @@ app.get("/new", (req, res)=>  {
 })
 
 
-app.get("/view/:imdbid", async (req, res) => {
+app.get('/view/:imdbid', async (req, res) => {
   const imdbid = req.params.imdbid;
   const userId = req.session.user ? req.session.user.id : null;
 
   try {
-    const result = await db.query("SELECT * FROM movies WHERE imdbid = $1", [imdbid]);
-    const movie = result.rows[0];
+    const movieResult = await db.query("SELECT * FROM movies WHERE imdbid = $1", [imdbid]);
+    const movie = movieResult.rows[0];
+
+    const commentsResult = await db.query(
+      `SELECT 
+         c.*, 
+         u.name 
+       FROM 
+         comments c 
+       JOIN 
+         users u 
+       ON 
+         c.user_id = u.id 
+       WHERE 
+         c.movie_id = $1 
+       ORDER BY 
+         c.created_at DESC`,
+      [imdbid]
+    );
+    const comments = commentsResult.rows;
 
     
     const relatedMoviesResult = await db.query(
       "SELECT * FROM movies WHERE genre = $1 AND imdbid != $2 LIMIT 5",
       [movie.genre, imdbid]
     );
-    let relatedMovies = relatedMoviesResult.rows;
+    const relatedMovies = relatedMoviesResult.rows;
 
-    relatedMovies = await setFavoriteStatusForMovies(relatedMovies, userId);
-
-    res.render("view.ejs", {req: req, movie: movie, relatedMovies: relatedMovies, query: req.query, currentDate: new Date() });
+    res.render('view.ejs', {req:req, movie: movie, comments: comments, relatedMovies: relatedMovies, user: req.session.user });
   } catch (error) {
-    console.error("Error fetching movie:", error);
-    res.status(500).send("Error fetching movie.");
+    console.error('Error fetching movie or comments:', error);
+    res.status(500).send('Error fetching movie or comments.');
   }
 });
-  
 
 app.post("/new", async (req, res)=>  {
     var movieName = req.body.movieName;
@@ -384,6 +399,9 @@ app.get('/comments/:movie_id', async (req, res) => {
       'SELECT comments.*, users.name FROM comments JOIN users ON comments.user_id = users.id WHERE movie_id = $1 ORDER BY created_at DESC',
       [movieId]
     );
+
+    console.log(result.rows);
+    
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching comments:', error);
