@@ -1,4 +1,4 @@
-import express from "express";
+import express, { query } from "express";
 import bodyParser from "body-parser";
 import pg from "pg";
 import axios from "axios";
@@ -30,7 +30,7 @@ app.use(
 function getCurrentUser(req, res, next) {
   if (req.session.user) {
     res.locals.user = req.session.user; 
-    res.locals.isAdmin = req.session.user.email === 'aleksa.dj.djuric@gmail.com'; 
+    res.locals.isAdmin = req.session.user.email === 'admin@gmail.com'; 
   }
   next();
 }
@@ -81,33 +81,41 @@ app.get("/", async (req, res) => {
 
     movies = await setFavoriteStatusForMovies(movies, userId);
 
-    res.render("index.ejs", { movies: movies, query: query, currentDate });
+    res.render("index.ejs", { movies: movies, query: query, currentDate: new Date(), req: req });
   } catch (error) {
     console.error("Error fetching movies:", error);
     res.status(500).send("Error fetching movies.");
   }
 });
 
-
 app.get("/new", (req, res)=>  {
     res.render("new.ejs", { edit: false, currentDate: new Date() });
 })
+
+
 app.get("/view/:imdbid", async (req, res) => {
-    const imdbid = req.params.imdbid; 
-    try {
-      
-      const result = await db.query("SELECT * FROM movies WHERE imdbid = $1", [imdbid]);
-      console.log(result.rows);
-  
-      
-      const movies = result.rows[0];
-      res.render("view.ejs", { movie:movies, query: req.query, currentDate: new Date() });
-  
-    } catch (error) {
-      console.error("Error fetching movies:", error);
-      res.status(500).send("Error fetching movies.");
-    }
-  });
+  const imdbid = req.params.imdbid;
+  const userId = req.session.user ? req.session.user.id : null;
+
+  try {
+    const result = await db.query("SELECT * FROM movies WHERE imdbid = $1", [imdbid]);
+    const movie = result.rows[0];
+
+    
+    const relatedMoviesResult = await db.query(
+      "SELECT * FROM movies WHERE genre = $1 AND imdbid != $2 LIMIT 5",
+      [movie.genre, imdbid]
+    );
+    let relatedMovies = relatedMoviesResult.rows;
+
+    relatedMovies = await setFavoriteStatusForMovies(relatedMovies, userId);
+
+    res.render("view.ejs", {req: req, movie: movie, relatedMovies: relatedMovies, query: req.query, currentDate: new Date() });
+  } catch (error) {
+    console.error("Error fetching movie:", error);
+    res.status(500).send("Error fetching movie.");
+  }
+});
   
 
 app.post("/new", async (req, res)=>  {
@@ -119,7 +127,7 @@ app.post("/new", async (req, res)=>  {
 
     const result = await db.query("INSERT INTO movies (moviename, genre, plot) VALUES ($1 ,$2, $3)", [movieName, genre , description])
     
-    res.render("new.ejs", {edit:false, movies:movies, currentDate, message: "You movie has been saved successfully"})
+    res.render("new.ejs", {req: req,edit:false, movies:movies, currentDate, message: "You movie has been saved successfully"})
   } catch (error) {
      console.error("Error fetching movies:", error); 
     res.status(500).send("Error fetching movies.");
@@ -136,12 +144,15 @@ app.post("/filter/genre/:genre", async (req, res) => {
 
     filteredMovies = await setFavoriteStatusForMovies(filteredMovies, userId);
 
-    res.render("index.ejs", { movies: filteredMovies, query: req.query, currentDate });
+    res.render("index.ejs", { movies: filteredMovies, query: req.query, currentDate,  req: req });
   } catch (error) {
     console.error("Error fetching movies:", error);
     res.status(500).send("Error fetching movies.");
   }
 });
+
+app.get("/search", async (req, res) => {});
+
 
 app.post("/search", async (req, res) => {
   const searchQuery = req.body.searchQuery;
@@ -157,7 +168,7 @@ app.post("/search", async (req, res) => {
 
     searchedMovies = await setFavoriteStatusForMovies(searchedMovies, userId);
 
-    res.render("index.ejs", { movies: searchedMovies, query: req.query, currentDate });
+    res.render("index.ejs", { movies: searchedMovies, query: req.query, currentDate , req: req});
   } catch (error) {
     console.error("Error fetching movies:", error);
     res.status(500).send("Error fetching movies.");
@@ -202,16 +213,22 @@ app.get("/edit-movie/:imdbid", async (req, res) => {
     }
   });
 
-  app.get("/delete/:imdbid", async (req, res) => {
-    const imdbid = req.params.imdbid; 
+  app.post('/delete-movie/:imdbid', requireAuth, async (req, res) => {
+    const imdbid = req.params.imdbid;
+  
     try {
-      await db.query("DELETE FROM movies WHERE imdbid = $1", [imdbid]);
-      res.redirect("/");
-    } catch (err) {
-      console.log(err);
+      // Delete related entries in the favorites table
+      await db.query('DELETE FROM favorites WHERE movie_id = $1', [imdbid]);
+  
+      // Delete the movie
+      await db.query('DELETE FROM movies WHERE imdbid = $1', [imdbid]);
+  
+      res.redirect(req.body.current_route || '/');
+    } catch (error) {
+      console.error('Error deleting movie:', error);
+      res.status(500).send('Error deleting movie.');
     }
   });
-
 
 app.get("/login", (req, res)=> {
   res.render("login.ejs", {currentDate: new Date().getFullYear() })
@@ -231,7 +248,7 @@ try {
       id: user.id,
       name: user.name,
       email: user.email,
-      is_admin: user.email === "aleksa.dj.djuric@gmail.com",
+      is_admin: user.email === "admin@gmail.com",
     };
     res.redirect("/");
   } else {
@@ -290,12 +307,12 @@ app.post("/signin", async (req, res)=> {
   }
 
 })
-
 app.post('/save-favorite', requireAuth, async (req, res) => {
   try {
     const movieId = req.body.movie_id;
     const userId = req.session.user.id;
     const currentPage = req.body.current_page || 1;
+    const currentRoute = req.body.current_route || '/';
     const isFavorite = req.body.is_favorite === 'on';
 
     if (isFavorite) {
@@ -317,11 +334,31 @@ app.post('/save-favorite', requireAuth, async (req, res) => {
       );
     }
 
-    res.redirect(`/?page=${currentPage}`);
+    res.redirect(currentRoute);
   } catch (err) {
     res.status(500).json({ error: 'Failed to update favorite' });
   }
 });
+
+app.get("/favorites", requireAuth, async (req, res) => {
+  const userId = req.session.user.id;
+
+  try {
+    const result = await db.query(
+      "SELECT movies.* FROM movies JOIN favorites ON movies.imdbid = favorites.movie_id WHERE favorites.user_id = $1",
+      [userId]
+    );
+    let favoriteMovies = result.rows;
+
+    favoriteMovies = await setFavoriteStatusForMovies(favoriteMovies, userId);
+
+    res.render("index.ejs", { movies: favoriteMovies, query: req.query, currentDate: new Date(), req: req });
+  } catch (error) {
+    console.error("Error fetching favorite movies:", error);
+    res.status(500).send("Error fetching favorite movies.");
+  }
+});
+
 
 
 app.listen(port, ()=> {

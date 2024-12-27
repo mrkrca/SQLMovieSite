@@ -39,12 +39,26 @@
                                     <label for="heart-<%= movie.imdbid %>" class="heart-label"></label>
                                     <input type="hidden" name="movie_id" value="<%= movie.imdbid %>">
                                     <input type="hidden" name="current_page" value="<%= currentPage %>">
+                                    <input type="hidden" name="current_route" value="<%= req.originalUrl %>">
                                   </div>
                                 </form>
                               <% } %>
                             </div>
                           </div>
                         </a>
+                        <% if (locals.isAdmin) { %>
+                          <div class="d-flex justify-content-around">
+                            <div class="mt-2">
+                              <a href="/edit-movie/<%= movie.imdbid %>" class="btn btn-primary btn-sm">Edit</a>
+                            </div> 
+                            <div class="mt-2">
+                              <form action="/delete-movie/<%= movie.imdbid %>" method="POST" onsubmit="return confirm('Are you sure you want to delete this movie?');">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                <input type="hidden" name="current_route" value="<%= req.originalUrl %>">
+                              </form>
+                            </div>
+                          </div>
+                        <% } %>
                       </div>
                     <% }) %>
                       

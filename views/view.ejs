@@ -57,6 +57,49 @@
                     </div>
                 </div>
             </div>
+            <div>
+                <div class="related-movies-container">
+                    <h2 class="related-movies-title text-white">Related Movies</h2>
+                  </div>
+                
+                <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3">
+                    <% relatedMovies.forEach((relatedMovie) => { %>
+                        <div class="col">
+                          <a href="/view/<%= relatedMovie.imdbid %>" class="text-decoration-none">
+                            <div class="card movie-card">
+                              <div class="movie-img-container">
+                                <img
+                                  src="/images/steamBackground.jpg"
+                                  class="card-img-top"
+                                  alt="<%= relatedMovie.Title %>"
+                                >
+                                <div class="movie-overlay">
+                                  <h5 class="movie-title"><%= relatedMovie.moviename %></h5>
+                                </div>
+                                <span class="hd-badge">HD</span>
+                                <% if (locals.user) { %>
+                                  <form action="/save-favorite" method="POST" class="favorite-form">
+                                    <div class="heart-checkbox">
+                                      <input 
+                                        type="checkbox" 
+                                        id="heart-<%= relatedMovie.imdbid %>" 
+                                        name="is_favorite"
+                                        <%= relatedMovie.isFavorite ? 'checked' : '' %>
+                                        onchange="this.form.submit()"
+                                      >
+                                      <label for="heart-<%= relatedMovie.imdbid %>" class="heart-label"></label>
+                                      <input type="hidden" name="movie_id" value="<%= relatedMovie.imdbid %>">
+                                      <input type="hidden" name="current_route" value="<%= req.originalUrl %>">
+                                    </div>
+                                  </form>
+                                <% } %>
+                              </div>
+                            </div>
+                          </a>
+                        </div>
+                      <% }) %>
+                </div>
+              </div>
         </div>
     </div>
 
