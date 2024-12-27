@@ -35,7 +35,9 @@
                             </div>
                         </div>
                         
-                        
+                        <!-- YOU CAN ADD WHAT EVER INFO U WANT, BUT U WILL NEED TO UPDATE DATABASE TO STORE IT. RIGHT NOW, DB SAVES ONLY TITLE, PLOT AND GENRE. The REST OF THE INFORMATION WILL BE TYPED AS "TEST"-->
+
+
                         <div class="row mt-4" style="align-items: center;">
                             <h1 class=""><%=movie.moviename %></h1>
                             <p><%=movie.plot %></p>
@@ -100,10 +102,60 @@
                       <% }) %>
                 </div>
               </div>
+
+             <% if (locals.user){ %>
+
+              
+              <div class="container mt-5" >
+               
+                <div class="card mb-4">
+                  <div class="card-body">
+                    <h5 class="card-title">Leave a Comment</h5>
+                    <form id="commentForm" action="/post-comment" method="POST">
+                      <div class="mb-3">
+                        <textarea class="form-control" id="commentInput" name="comment" rows="3" placeholder="Write your comment here..."></textarea>
+                      </div>
+                      <input type="hidden" name="movie_id" value="<%= movie.imdbid %>">
+                      <button type="submit" class="btn btn-primary">Post Comment</button>
+                    </form>
+                  </div>
+                </div>
+              
+               
+                <div id="commentsContainer">
+                 
+                </div>
+              </div>
         </div>
     </div>
-
+              <%}%>
 
    <%}%>
+
+   <script>
+     document.addEventListener('DOMContentLoaded', function() {
+      const movieId = '<%= movie.imdbid %>';
+      fetch(`/comments/${movieId}`)
+        .then(response => response.json())
+        .then(comments => {
+          const commentsContainer = document.getElementById('commentsContainer');
+          comments.forEach(comment => {
+            const commentCard = document.createElement('div');
+            commentCard.className = 'card mb-3';
+            commentCard.innerHTML = `
+              <div class="card-body">
+                <div class="d-flex justify-content-between">
+                  <h6 class="card-subtitle mb-2 text-muted">${comment.name}</h6>
+                  <small class="text-muted">${new Date(comment.created_at).toLocaleString()}</small>
+                </div>
+                <p class="card-text">${comment.comment}</p>
+              </div>
+            `;
+            commentsContainer.appendChild(commentCard);
+          });
+        })
+        .catch(error => console.error('Error fetching comments:', error));
+    });
+   </script>
 </body>
     <%-include("partials/footer.ejs") %>

@@ -168,7 +168,7 @@ app.post("/search", async (req, res) => {
 
     searchedMovies = await setFavoriteStatusForMovies(searchedMovies, userId);
 
-    res.render("index.ejs", { movies: searchedMovies, query: req.query, currentDate , req: req});
+    res.render("index.ejs", { movies: searchedMovies, query: req.query, currentDate: new Date(), req: req });
   } catch (error) {
     console.error("Error fetching movies:", error);
     res.status(500).send("Error fetching movies.");
@@ -356,6 +356,38 @@ app.get("/favorites", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Error fetching favorite movies:", error);
     res.status(500).send("Error fetching favorite movies.");
+  }
+});
+
+
+app.post("/post-comment",requireAuth, async (req, res)=> {
+
+const comment = req.body.comment;
+const movieId = req.body.movie_id;
+const userId = req.session.user.id;
+
+try {
+  const result = await db.query("INSERT INTO comments(comment, movie_id, user_id) VALUES ($1, $2, $3)", [comment, movieId, userId])
+  res.redirect(`/view/${movieId}`);
+} catch (error) {
+  console.error('Error posting comment:', error);
+    res.status(500).send('Error posting comment.');
+}
+
+})
+
+app.get('/comments/:movie_id', async (req, res) => {
+  const movieId = req.params.movie_id;
+
+  try {
+    const result = await db.query(
+      'SELECT comments.*, users.name FROM comments JOIN users ON comments.user_id = users.id WHERE movie_id = $1 ORDER BY created_at DESC',
+      [movieId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    res.status(500).send('Error fetching comments.');
   }
 });
 
