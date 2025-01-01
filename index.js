@@ -6,31 +6,31 @@ import fs from "fs"
 import { error, log } from "console";
 import session from "express-session";
 import bcrypt from "bcrypt";
+import dotenv from "dotenv";
 
-
-
+dotenv.config();
 const app = express();
 const port = 3000;
 const saltRounds = 10;
 
 const db = new pg.Client({
-    user: "postgres",
-    host: "localhost",
-    database: "movies",
-    password: "1212",
-    port: 5432,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_DATABASE,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
 });
 db.connect();
 app.use(express.json());
 app.use(
   session({
-    secret: "pacov123", 
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: { 
       
       maxAge: 1000 * 60 * 60 * 24 * 7,
-      secure: false }, // Use `secure: true` with HTTPS in production
+      secure: false }, // Use `true` with HTTPS in production
   })
 );
 function getCurrentUser(req, res, next) {
