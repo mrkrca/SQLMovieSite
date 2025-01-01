@@ -5,10 +5,13 @@ import axios from "axios";
 import fs from "fs"
 import { error, log } from "console";
 import session from "express-session";
+import bcrypt from "bcrypt";
+
+
 
 const app = express();
 const port = 3000;
-
+const saltRounds = 10;
 
 const db = new pg.Client({
     user: "postgres",
@@ -24,7 +27,10 @@ app.use(
     secret: "pacov123", 
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false }, // Use `secure: true` with HTTPS in production
+    cookie: { 
+      
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+      secure: false }, // Use `secure: true` with HTTPS in production
   })
 );
 function getCurrentUser(req, res, next) {
@@ -232,10 +238,10 @@ app.get("/edit-movie/:imdbid", async (req, res) => {
     const imdbid = req.params.imdbid;
   
     try {
-      // Delete related entries in the favorites table
+      
       await db.query('DELETE FROM favorites WHERE movie_id = $1', [imdbid]);
   
-      // Delete the movie
+    
       await db.query('DELETE FROM movies WHERE imdbid = $1', [imdbid]);
   
       res.redirect(req.body.current_route || '/');
@@ -249,39 +255,40 @@ app.get("/login", (req, res)=> {
   res.render("login.ejs", {currentDate: new Date().getFullYear() })
 })
 
-app.post("/login", async(req, res)=> {
-const email = req.body.email;
-const password = req.body.password;
-let user;
-try {
-  const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
-  user = result.rows[0]
-  console.log(user);
+app.post("/login", async (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  console.log("Received email:", email); 
+  try {
+    const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    const user = result.rows[0];
 
-  if (user.email == email && user.password == password) {
-    req.session.user = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      is_admin: user.email === "admin@gmail.com",
-    };
-    res.redirect("/");
-  } else {
-    res.render("login.ejs",  {success: false, message: "Email or password is invalid", currentDate: new Date().getFullYear() })
+    if (!user) {
+      return res.render("login.ejs", { success: false, message: "Email or password is invalid", currentDate: new Date().getFullYear() });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (isMatch) {
+      req.session.user = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        is_admin: user.email === "admin@gmail.com",
+      };
+      return res.redirect("/");
+    } else {
+      return res.render("login.ejs", { success: false, message: "Email or password is invalid", currentDate: new Date().getFullYear() });
+    }
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).send("Error during login.");
   }
-
+});
   
     
-} catch (error) {
-  console.error("Error :", error);
-  res.status(500).send("Error  .");
-  res.render("login.ejs",  {success: false, message: "There was an error", currentDate: new Date().getFullYear() })
-}
 
 
-
- 
-})
 
 app.get("/logout", (req, res) => {
   req.session.destroy((err) => {
@@ -310,8 +317,18 @@ app.post("/signin", async (req, res)=> {
     if (emailCheck.rows.length > 0){
       res.render("signin.ejs",  {success: false, message: "This email is already registered. Please use another email.", currentDate: new Date().getFullYear() })
     } else {
-      await db.query("INSERT INTO users (name, password, email) VALUES ($1, $2, $3)", [name, userpassword, useremail])
-      res.render("signin.ejs",  {success: true, message: "Congrats, you are signed up.", currentDate: new Date().getFullYear() })
+
+      bcrypt.hash(userpassword, saltRounds, async (err, hash) => {
+        if (err) {
+          console.error("Error hashing password:", err);
+        } else {
+          console.log("Hashed Password:", hash);
+          await db.query("INSERT INTO users (name, password, email) VALUES ($1, $2, $3)", [name, hash, useremail])
+          res.render("signin.ejs",  {success: true, message: "Congrats, you are signed up.", currentDate: new Date().getFullYear() })
+        }
+      });
+     
+     
     }
    console.log(emailCheck);
   
