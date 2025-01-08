@@ -7,7 +7,6 @@ import { error, log } from "console";
 import session from "express-session";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
-import connectPgSimple from "connect-pg-simple";
 
 dotenv.config();
 const app = express();
@@ -21,27 +20,19 @@ const db = new pg.Client({
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,  
-  },
+
 });
 db.connect();
-const pgSession = connectPgSimple(session);
-
 app.use(express.json());
 app.use(
   session({
-    store: new pgSession({
-      pool: db, 
-      tableName: 'session' 
-    }),
     secret: "pacov123",
     resave: false,
     saveUninitialized: true,
-    cookie: {
+    cookie: { 
+      
       maxAge: 1000 * 60 * 60 * 24 * 7,
-      secure: true, 
-    },
+      secure: false }, // Use `true` with HTTPS in production
   })
 );
 function getCurrentUser(req, res, next) {
