@@ -1,0 +1,246 @@
+body {
+    margin:  0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #1e2129;
+    overflow: auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+   
+}
+
+
+
+header a {
+    text-decoration: none;
+    color: black;
+}
+
+.footer_wrapper {
+    width: 100%;
+    
+}
+
+.movie-grid {
+    background-color: #1a1a1a;
+  }
+
+  .movie-card {
+    transition: transform 0.2s;
+    aspect-ratio: 2/3;
+    border: none !important;
+    background: none;
+  }
+
+  .movie-card:hover {
+    transform: scale(1.05);
+    z-index: 1;
+  }
+
+  .movies-wrapper {
+    flex: 1;
+    margin-bottom: 2rem;
+  }
+
+  .movie-img-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 8px;
+  }
+  .movie-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .movie-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8) 50%, rgba(0, 0, 0, 0.9));
+  }
+  .movie-title {
+    color: white;
+    font-size: 1rem;
+    margin: 0;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  }
+
+  .hd-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #ffd700;
+    color: black;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: bold;
+  }
+
+  .pagination {
+    margin-top: auto;
+    padding: 1rem 0;
+  }
+  .hero-section {
+    background-color: #1a1a1a;
+    color: #8e95a5;
+    padding: 3rem 0;
+}
+.movie-poster {
+    max-width: 300px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+.play-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0,199,199,0.9);
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.hero-image-container {
+    position: relative;
+    margin-bottom: 2rem;
+}
+.movie-info {
+    background-color: #2a2a2a;
+    border-radius: 8px;
+    padding: 1.5rem;
+    gap:20px;
+}
+.action-buttons .btn {
+    width: 100%;
+    margin-bottom: 1rem;
+    background-color: #22b7c9;
+    color: black;
+}
+
+
+ 
+button.active {
+  background-color: red; 
+  border-color: red;
+}
+
+button .bi-heart.fill {
+  color: white; 
+}
+
+button .bi-heart {
+  color: grey;
+}
+.movie-card {
+  position: relative;
+}
+
+.heart-checkbox {
+  position: absolute;
+  top: 0px;
+  left: 10px;
+  z-index: 10;
+}
+
+.heart-checkbox input[type="checkbox"] {
+  display: none;
+}
+
+.heart-label {
+  cursor: pointer;
+  color: white;
+  font-size: 50px;
+  transition: all 0.2s ease;
+  filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+}
+
+.heart-label:before {
+  content: '♡';
+}
+
+.heart-checkbox input[type="checkbox"]:checked + .heart-label:before {
+  content: '♥';
+  color: #ff3366;
+}
+
+.heart-label:hover {
+  transform: scale(1.1);
+}
+
+.heart-checkbox input[type="checkbox"]:checked + .heart-label {
+  animation: heart-burst 0.2s ease-out;
+}
+
+@keyframes heart-burst {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.movie-img-container {
+  position: relative;
+}
+
+.hd-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #ffd700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.edit_new {
+ 
+  color: rgb(241, 241, 241);
+}
+
+.navbar {
+  font-size: 0.9rem; 
+}
+
+.navbar .nav-link {
+  padding: 0.3rem 0.5rem; 
+}
+
+.navbar .dropdown-menu {
+  font-size: 0.85rem; 
+}
+
+.navbar .small-text {
+  font-size: 0.85rem; 
+}
+
+.navbar-toggler {
+  padding: 0.2rem 0.4rem; 
+}
+
+.navbar-collapse {
+  margin-top: 0.2rem; 
+}
+
+.related-movies-container {
+  display: inline-block; 
+  background-color: #333; 
+  padding: 10px 20px; 
+  border-radius: 5px;
+  margin: 20px 0;
+}
+
+.related-movies-title {
+  margin: 0; 
+}
+
+
+

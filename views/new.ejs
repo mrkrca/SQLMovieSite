@@ -1,0 +1,28 @@
+<%- include("partials/header.ejs") %>
+<body style="background-color: #1e2129; ">
+
+<form class="container" action="<%= edit ? '/edit-movie/' + movie.imdbid : '/new' %>" method="POST">
+    <h2 class="edit_new"><%= edit ? "Edit Movie" : "Add Movie" %></h2>
+    <div class="form-group">
+        <label for="exampleFormControlInput1">Name</label>
+        <input type="text" class="form-control" id="exampleFormControlInput1" name="movieName" placeholder="Movie Name" value="<%= edit && movie ? movie.moviename : '' %>">
+    </div>
+    <div class="form-group">
+        <label for="exampleFormControlSelect1">Genre</label>
+        <select class="form-control" id="exampleFormControlSelect1" name="genre">
+            <option value="Horror" <%= edit && movie.genre === 'Horror' ? 'selected' : '' %>>Horror</option>
+            <option value="Drama" <%= edit && movie.genre === 'Drama' ? 'selected' : '' %>>Drama</option>
+            <option value="Action" <%= edit && movie.genre === 'Action' ? 'selected' : '' %>>Action</option>
+            <option value="Fantasy" <%= edit && movie.genre === 'Fantasy' ? 'selected' : '' %>>Fantasy</option>
+            <option value="Sifi" <%= edit && movie.genre === 'Sifi' ? 'selected' : '' %>>Si-Fi</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="exampleFormControlTextarea1">Description</label>
+        <textarea class="form-control" id="exampleFormControlTextarea1" rows="3" placeholder="Description" name="description"><%= edit && movie ? movie.plot : '' %></textarea>
+    </div>
+    <button type="submit" style="background-color: hsl(218, 4%, 52%);" class="btn my-2">Confirm identity</button>
+    <h1 class="edit_new"><%= locals.message %></h1>
+</form>
+</body>
+<%- include("partials/footer.ejs") %>

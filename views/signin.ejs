@@ -1,0 +1,45 @@
+<%- include("partials/header.ejs") %>
+<!-- Login 13 - Bootstrap Brain Component -->
+<body style="background-color: #1e2129; ">
+
+
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h4 class="text-center mb-4">Sign up to your account</h4>
+                   <% if (locals.success == true) { %>
+                    <h4 class="text-center mb-4"><%=locals.message%></h4>
+                   <%} else { %>
+                    <h4 class="text-center mb-4"><%=locals.message%></h4>
+                 <%  } %>
+                   
+                    
+                    <form action="/signin" method="post">
+                        <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="name"  name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="email" class="form-control" placeholder="Email"  name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" class="form-control" placeholder="Password"  name="password" required>
+                        </div>
+                      
+                        <div class="mb-3 d-flex justify-content-between align-items-center">
+                          
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mb-3">Sign up</button>
+                        <div class="form-check">
+                            <span>Already have an account? <a href="/login">Log in</a></span>
+                         </div>
+                     
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+  <%- include("partials/footer.ejs") %>
