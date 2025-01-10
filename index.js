@@ -25,6 +25,9 @@ const db = new pg.Client({
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
   connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 
 });
 db.connect();
@@ -58,7 +61,7 @@ app.use(passport.session());
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: "https://sqlmoviesite-production.up.railway.app/auth/google/callback",
+  callbackURL: "https://sqlmoviesite-production.up.railway.app/auth/google/callback"
 
 },
 async function(accessToken, refreshToken, profile, done) {
