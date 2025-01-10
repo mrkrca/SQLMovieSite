@@ -29,6 +29,9 @@ const db = new pg.Client({
 });
 db.connect();
 app.use(express.json());
+const PgSession = connectPgSimple(session);
+
+
 app.use(
   session({
     store: new PgSession({
