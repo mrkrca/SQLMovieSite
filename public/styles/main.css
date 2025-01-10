@@ -21,55 +21,84 @@ header a {
     width: 100%;
     
 }
-
 .movie-grid {
-    background-color: #1a1a1a;
-  }
+  background-color: #1a1a1a;
+}
 
-  .movie-card {
-    transition: transform 0.2s;
-    aspect-ratio: 2/3;
-    border: none !important;
-    background: none;
-  }
+.movie-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.3s ease;
+  aspect-ratio: 2/3;
+  border: none !important;
+  background: none;
+  cursor: pointer;
+}
 
-  .movie-card:hover {
-    transform: scale(1.05);
-    z-index: 1;
-  }
+.movie-img-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+}
 
-  .movies-wrapper {
-    flex: 1;
-    margin-bottom: 2rem;
-  }
+.movie-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-  .movie-img-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    border-radius: 8px;
-  }
-  .movie-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  .movie-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 1rem;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8) 50%, rgba(0, 0, 0, 0.9));
-  }
-  .movie-title {
-    color: white;
-    font-size: 1rem;
-    margin: 0;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-  }
+.play-button-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #2196f3; /* Bright blue color */
+  font-size: 50px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none; /* Removed dark background */
+}
 
+.movie-card:hover .play-button-card {
+  opacity: 1;
+}
+
+.movie-card:hover img {
+  opacity: 0.7;
+}
+
+.movie-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  background: linear-gradient(
+    transparent,
+    rgba(0, 0, 0, 0.8) 50%,
+    rgba(0, 0, 0, 0.9)
+  );
+}
+
+.movie-title {
+  color: white;
+  font-size: 1rem;
+  margin: 0;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.movies-wrapper {
+  flex: 1;
+  margin-bottom: 2rem;
+}
   .hd-badge {
     position: absolute;
     top: 10px;
@@ -177,6 +206,10 @@ button .bi-heart {
 }
 
 .heart-checkbox input[type="checkbox"]:checked + .heart-label {
+  animation: none; 
+}
+
+.animate-heart-burst {
   animation: heart-burst 0.2s ease-out;
 }
 
@@ -185,7 +218,6 @@ button .bi-heart {
   50% { transform: scale(1.3); }
   100% { transform: scale(1); }
 }
-
 .movie-img-container {
   position: relative;
 }

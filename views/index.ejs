@@ -16,14 +16,19 @@
                       <div class="col">
                         <a href="/view/<%= movie.imdbid %>" class="text-decoration-none">
                           <div class="card movie-card">
+                            
                             <div class="movie-img-container">
+                              <div class="play-button-card">▶</div>
                               <img
                                 src="/images/steamBackground.jpg"
                                 class="card-img-top"
                                 alt="<%= movie.Title %>"
                               >
+                              
                               <div class="movie-overlay">
+                                
                                 <h5 class="movie-title"><%= movie.moviename %></h5>
+                                
                               </div>
                               <span class="hd-badge">HD</span>
                               <% if (locals.user) { %>

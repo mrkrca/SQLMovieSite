@@ -7,6 +7,9 @@ import { error, log } from "console";
 import session from "express-session";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as LocalStrategy } from "passport-local";
 
 dotenv.config();
 const app = express();
@@ -26,7 +29,7 @@ db.connect();
 app.use(express.json());
 app.use(
   session({
-    secret: "pacov123",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: { 
@@ -35,19 +38,108 @@ app.use(
       secure: false }, // Use `true` with HTTPS in production
   })
 );
+
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: "http://localhost:3000/auth/google/callback"
+},
+async function(accessToken, refreshToken, profile, done) {
+  try {
+    const email = profile.emails[0].value;
+    const name = profile.displayName;
+    const googleId = profile.id;
+
+    
+    const userResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    let user = userResult.rows[0];
+
+    if (!user) {
+      
+      const insertResult = await db.query(
+        'INSERT INTO users (email, name, google_id) VALUES ($1, $2, $3) RETURNING *',
+        [email, name, googleId]
+      );
+      user = insertResult.rows[0];
+    }
+ user.is_admin = user.email === 'admin@gmail.com'
+    return done(null, user);
+  } catch (err) {
+    return done(err);
+  }
+}));
+
+passport.use(new LocalStrategy(
+  { usernameField: 'email' },
+  async (email, password, done) => {
+    try {
+      const userResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+      const user = userResult.rows[0];
+
+      if (!user) {
+        return done(null, false, { message: 'Incorrect email.' });
+      }
+
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return done(null, false, { message: 'Incorrect password.' });
+      }
+
+      user.is_admin = user.email === 'admin@gmail.com'
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
+  }
+));
+
+
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((obj, done) => {
+  done(null, obj);
+});
+
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['https://www.googleapis.com/auth/plus.login', 'email'] })
+);
+
+app.get('/auth/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function(req, res) {
+   
+    res.redirect('/');
+  }
+);
+
+
+
+
 function getCurrentUser(req, res, next) {
-  if (req.session.user) {
-    res.locals.user = req.session.user; 
-    res.locals.isAdmin = req.session.user.email === 'admin@gmail.com'; 
+  if (req.isAuthenticated()) {
+    res.locals.user = req.user;
+    res.locals.isAdmin = req.user.is_admin;
+  } else {
+    res.locals.isAdmin = false;
+    res.locals.user = null;
   }
   next();
 }
+
 function requireAuth(req, res, next) {
-  if (!req.session.user) {
+  if (!req.isAuthenticated()) {
     return res.redirect('/login');
   }
   next();
 }
+
 app.use(getCurrentUser);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
@@ -75,13 +167,12 @@ async function setFavoriteStatusForMovies(movies, userId) {
     isFavorite: favoriteMovieIds.includes(movie.imdbid)
   }));
 }
-
 const edit = false;
 
 
 app.get("/", async (req, res) => {
   const query = req.query;
-  const userId = req.session.user ? req.session.user.id : null;
+  const userId = req.user ? req.user.id : null;
 
   try {
     const result = await db.query("SELECT * FROM movies");
@@ -103,12 +194,19 @@ app.get("/new", (req, res)=>  {
 
 app.get('/view/:imdbid', async (req, res) => {
   const imdbid = req.params.imdbid;
-  const userId = req.session.user ? req.session.user.id : null;
+  const userId = req.user ? req.user.id : null;
 
   try {
+    console.log(`Fetching movie with imdbid: ${imdbid}`);
     const movieResult = await db.query("SELECT * FROM movies WHERE imdbid = $1", [imdbid]);
     const movie = movieResult.rows[0];
 
+    if (!movie) {
+      console.error(`Movie with imdbid ${imdbid} not found`);
+      return res.status(404).send("Movie not found");
+    }
+
+    console.log(`Fetching comments for movie with imdbid: ${imdbid}`);
     const commentsResult = await db.query(
       `SELECT 
          c.*, 
@@ -118,26 +216,24 @@ app.get('/view/:imdbid', async (req, res) => {
        JOIN 
          users u 
        ON 
-         c.user_id = u.id 
+         c.user_id = u.id
        WHERE 
-         c.movie_id = $1 
-       ORDER BY 
-         c.created_at DESC`,
+         c.movie_id = $1`,
       [imdbid]
     );
     const comments = commentsResult.rows;
 
-    
+    console.log(`Fetching related movies for movie with imdbid: ${imdbid}`);
     const relatedMoviesResult = await db.query(
-      "SELECT * FROM movies WHERE genre = $1 AND imdbid != $2 LIMIT 5",
+      `SELECT * FROM movies WHERE genre = $1 AND imdbid != $2 LIMIT 5`,
       [movie.genre, imdbid]
     );
     const relatedMovies = relatedMoviesResult.rows;
 
-    res.render('view.ejs', {req:req, movie: movie, comments: comments, relatedMovies: relatedMovies, user: req.session.user });
+    res.render("view.ejs", { movie: movie, relatedMovies: relatedMovies, comments: comments, currentDate: new Date(), req: req });
   } catch (error) {
-    console.error('Error fetching movie or comments:', error);
-    res.status(500).send('Error fetching movie or comments.');
+    console.error("Error fetching movie:", error);
+    res.status(500).send("Error fetching movie.");
   }
 });
 
@@ -159,7 +255,7 @@ app.post("/new", async (req, res)=>  {
 
 app.post("/filter/genre/:genre", async (req, res) => {
   const genre = req.body.genre;
-  const userId = req.session.user ? req.session.user.id : null;
+  const userId = req.user ? req.user.id : null;
 
   try {
     const result = await db.query("SELECT * FROM movies WHERE genre = $1", [genre]);
@@ -179,7 +275,7 @@ app.get("/search", async (req, res) => {});
 
 app.post("/search", async (req, res) => {
   const searchQuery = req.body.searchQuery;
-  const userId = req.session.user ? req.session.user.id : null;
+  const userId = req.user ? req.user.id : null;
 
   if (!searchQuery || searchQuery.trim() === "") {
     return res.status(400).send("Search query is required.");
@@ -257,48 +353,21 @@ app.get("/login", (req, res)=> {
   res.render("login.ejs", {currentDate: new Date().getFullYear() })
 })
 
-app.post("/login", async (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
-  console.log("Received email:", email); 
-  try {
-    const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
-    const user = result.rows[0];
+app.post('/login', passport.authenticate('local', {
+  successRedirect: '/',
+  failureRedirect: '/login',
+  failureFlash: true
+}));
 
-    if (!user) {
-      return res.render("login.ejs", { success: false, message: "Email or password is invalid", currentDate: new Date().getFullYear() });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (isMatch) {
-      req.session.user = {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        is_admin: user.email === "admin@gmail.com",
-      };
-      return res.redirect("/");
-    } else {
-      return res.render("login.ejs", { success: false, message: "Email or password is invalid", currentDate: new Date().getFullYear() });
-    }
-  } catch (error) {
-    console.error("Error during login:", error);
-    res.status(500).send("Error during login.");
-  }
-});
-  
     
 
 
-
-app.get("/logout", (req, res) => {
-  req.session.destroy((err) => {
+app.get('/logout', (req, res) => {
+  req.logout((err) => {
     if (err) {
-      console.error("Error destroying session:", err);
-      return res.status(500).send("Error logging out.");
+      return next(err);
     }
-    res.redirect("/login"); 
+    res.redirect('/');
   });
 });
 
@@ -341,14 +410,15 @@ app.post("/signin", async (req, res)=> {
   }
 
 })
+
+
 app.post('/save-favorite', requireAuth, async (req, res) => {
   try {
     const movieId = req.body.movie_id;
-    const userId = req.session.user.id;
+    const userId = req.user.id; 
     const currentPage = req.body.current_page || 1;
     const currentRoute = req.body.current_route || '/';
     const isFavorite = req.body.is_favorite === 'on';
-
     if (isFavorite) {
       const existingFavorite = await db.query(
         'SELECT * FROM favorites WHERE user_id = $1 AND movie_id = $2',
@@ -374,8 +444,9 @@ app.post('/save-favorite', requireAuth, async (req, res) => {
   }
 });
 
+
 app.get("/favorites", requireAuth, async (req, res) => {
-  const userId = req.session.user.id;
+  const userId = req.user.id;
 
   try {
     const result = await db.query(
@@ -398,7 +469,7 @@ app.post("/post-comment",requireAuth, async (req, res)=> {
 
 const comment = req.body.comment;
 const movieId = req.body.movie_id;
-const userId = req.session.user.id;
+const userId = req.user.id;
 
 try {
   const result = await db.query("INSERT INTO comments(comment, movie_id, user_id) VALUES ($1, $2, $3)", [comment, movieId, userId])

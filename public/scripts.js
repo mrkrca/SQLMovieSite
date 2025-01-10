@@ -15,7 +15,7 @@ function submitGenre(genre) {
   
   function submitSearch(event) {
     if (event.key === 'Enter') {
-      event.preventDefault(); // Prevent the default form submission
+      event.preventDefault(); 
   
       const searchInput = document.getElementById('searchInput');
       const searchValue = searchInput.value.trim();
@@ -36,7 +36,6 @@ function submitGenre(genre) {
       form.submit();
     }
   }
-  
   function handleFavorite(event, form) {
     event.preventDefault();
   
@@ -48,6 +47,26 @@ function submitGenre(genre) {
       }
     }).then(response => {
       if (response.ok) {
+        return response.json();
+      } else {
+        throw new Error('Failed to update favorite status.');
+      }
+    }).then(data => {
+      if (data.success) {
+        const checkbox = form.querySelector('input[type="checkbox"]');
+        const label = form.querySelector('.heart-label');
+        checkbox.checked = data.isFavorite;
+  
+        // Remove animation class from all labels
+        document.querySelectorAll('.heart-label').forEach(label => {
+          label.classList.remove('animate-heart-burst');
+        });
+  
+        // Add animation class to the clicked label
+        if (data.isFavorite) {
+          label.classList.add('animate-heart-burst');
+        }
+  
         console.log('Favorite status updated successfully.');
       } else {
         console.error('Failed to update favorite status.');
@@ -56,7 +75,3 @@ function submitGenre(genre) {
       console.error('Error:', error);
     });
   }
-
-
-
-  
