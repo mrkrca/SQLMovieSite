@@ -58,7 +58,7 @@ app.use(passport.session());
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: "https://sqlmoviesite-production.up.railway.app/auth/google/callback"
+  callbackURL: "https://sqlmoviesite-production.up.railway.app/auth/google/callback",
 
 },
 async function(accessToken, refreshToken, profile, done) {
