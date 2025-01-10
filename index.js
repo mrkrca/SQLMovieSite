@@ -28,6 +28,9 @@ const db = new pg.Client({
 
 });
 db.connect();
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
 app.use(express.json());
 const PgSession = connectPgSimple(session);
 
@@ -151,8 +154,6 @@ function requireAuth(req, res, next) {
 }
 
 app.use(getCurrentUser);
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static("public"));
 
 
 

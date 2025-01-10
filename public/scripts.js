@@ -14,7 +14,7 @@ function submitGenre(genre) {
   }
   
   function submitSearch(event) {
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter') { 
       event.preventDefault(); 
   
       const searchInput = document.getElementById('searchInput');
@@ -57,12 +57,12 @@ function submitGenre(genre) {
         const label = form.querySelector('.heart-label');
         checkbox.checked = data.isFavorite;
   
-        // Remove animation class from all labels
+        
         document.querySelectorAll('.heart-label').forEach(label => {
           label.classList.remove('animate-heart-burst');
         });
   
-        // Add animation class to the clicked label
+       
         if (data.isFavorite) {
           label.classList.add('animate-heart-burst');
         }
