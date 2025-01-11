@@ -15,7 +15,7 @@ import connectPgSimple from "connect-pg-simple";
 
 dotenv.config();
 const app = express();
-const port = process.env.PORT || 8080;
+const port = 3000;
 const saltRounds = 10;
 
 const db = new pg.Client({
@@ -49,7 +49,7 @@ app.use(
     saveUninitialized: false,
     cookie: {
       maxAge: 1000 * 60 * 60 * 24 * 7, 
-      secure: true, 
+      secure: false, 
     },
   })
 );
